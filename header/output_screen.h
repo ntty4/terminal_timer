@@ -24,6 +24,8 @@ typedef struct dynArr {
 void dyAppend(dynArr *frame, int src_size, char *src);
 void dyFree(dynArr *frame);
 void printScreen(data_timer *dt, data_graphic *dg);
+
+void time2screen(dynArr *frame, data_timer *dt, data_graphic *dg);
 void printRect(dynArr *frame, data_graphic *dt, int col, int row);
 #endif
 
