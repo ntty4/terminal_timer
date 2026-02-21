@@ -7,6 +7,10 @@
 #include <unistd.h>
 #include <stdint.h>
 
+
+
+
+
 void dyAppend(dynArr *frame, int src_size, char *src) {
     int new_size = frame->size + src_size;
     int old_capacity = frame->capacity;
@@ -62,31 +66,48 @@ void printRect(dynArr *frame, data_graphic *dt, int col, int row) {
     }
 }
 
-static const uint16_t digit_patterns[] = {
-    ['0'] = 0x7B6F, // 111 101 101 101 111
-    ['1'] = 0x2492, // 010 010 010 010 010
-    ['2'] = 0x73E7, // 111 001 111 100 111
-    ['3'] = 0x73CF, // 111 001 111 001 111
-    ['4'] = 0x5BC9, // 101 101 111 001 001
-    ['5'] = 0x79CF, // 111 100 111 001 111
-    ['6'] = 0x79EF, // 111 100 111 101 111
-    ['7'] = 0x7249, // 111 001 010 010 010
-    ['8'] = 0x7BEF, // 111 101 111 101 111
-    ['9'] = 0x7Bcf, // 111 101 111 001 111
-    [':'] = 0x410   // 000 010 000 010 000
-};
-
 static void numAppender(dynArr *frame, char num, int numOffset, int y_offset) {
     if (num < '0' || num > ':') return;
 
-    uint16_t pattern = digit_patterns[(int)num];
+    /* in this part the idea is to map every character to a specific position
+     * in the array, so that in digit_patterns[0] -> his representation of 0.
+     *
+     * static -> it is only in this file, not outside
+     * const -> cannot be modified */
+    const uint16_t digit_patterns[] = {
+        0x7B6F, // 111 101 101 101 111
+        0x2492, // 010 010 010 010 010
+        0x73E7, // 111 001 111 100 111
+        0x73CF, // 111 001 111 001 111
+        0x5BC9, // 101 101 111 001 001
+        0x79CF, // 111 100 111 001 111
+        0x79EF, // 111 100 111 101 111
+        0x7249, // 111 001 010 010 010
+        0x7BEF, // 111 101 111 101 111
+        0x7Bcf, // 111 101 111 001 111
+        0x410   // 000 010 000 010 000
+    };
+
+    /* there i am turning the char into its numerical representation 
+     * and them mapping this number to its bit mask */
+    uint16_t pattern = digit_patterns[num - '0'];
     char buff[32];
 
     for (int y = 0; y < 5; y++) {
         for (int x = 0; x < 3; x++) {
-            int bitPos = 14 - (y * 3 + x);
 
-            if ((pattern >> bitPos) & 1) {
+            /* the idea is to caluclate in which position should i check for see if 
+             * put or not puth the character:
+             *
+             * I know that there are 15 cells, (0-14), and are 3 row * 5 line, 0 index
+             * based, so i can multiply the row index by 3 and sum the column position;
+             * in this way i obtain what bit i should check */
+            int bitPosToCheck = 14 - (y * 3 + x);
+
+            /* Naw that i know in which posotion is the bit to be checked, i move that bit
+             * on the left '>>' unitl it becomes the first; and after that i check with '&1'
+             * if i must or not print it */
+            if ((pattern >> bitPosToCheck) & 1) {
                 int len = snprintf(buff, sizeof(buff), "\x1b[%d;%dH%s", 
                                    y_offset + y + 1, numOffset + x + 1, "\u2588");
                 dyAppend(frame, len, buff);
@@ -98,8 +119,8 @@ static void numAppender(dynArr *frame, char num, int numOffset, int y_offset) {
 void time2screen(dynArr *frame, data_timer *dt, data_graphic *dg) {
     char strTime[64];
     int len;
-    int x_offset = (dg->size_screen.x - 30) / 2;
-    int y_offset = (dg->size_screen.y - 4) / 2;
+    int x_offset = (dg->size_screen.x - dg->rectLen.x) / 2;
+    int y_offset = (dg->size_screen.y - dg->rectLen.y) / 2;
 
     len = snprintf(strTime, sizeof(strTime), "%02d:%02d:%02d", dt->hrs, dt->min, dt->sec);
 

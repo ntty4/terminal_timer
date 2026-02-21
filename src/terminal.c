@@ -20,7 +20,7 @@ void terminalRaw(void) {
     rawTerm.c_oflag &= ~(OPOST);
 
     rawTerm.c_cc[VMIN] = 0;
-    rawTerm.c_cc[VTIME] = 1;
+    rawTerm.c_cc[VTIME] = 0;
 
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &rawTerm) == -1) die("tcsetattr");
 }
